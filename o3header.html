@@ -1,0 +1,130 @@
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/javascript" src="https://admin.tago.io/dist/custom-widget.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@antv/data-set@0.11.4/build/data-set.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@antv/g2@4.0.7/dist/g2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js" integrity="sha256-ZsWP0vT+akWmvEMkNYgZrPHKU9Ke8nYBPC3dqONp1mY=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone.min.js" integrity="sha256-feldwaIKmjN0728wBssgenKywsqNHZ6dIziXDVaq9oc=" crossorigin="anonymous"></script>
+
+  <title>My Widget</title>
+  
+  <style>
+html, body {
+    overflow: hidden;
+}
+</style>
+</head>
+
+
+<body style="background-color: #33BBFF; overflow: hidden">
+  <div id="container" style="overflow:hidden">
+	<table border="0" width="100%">
+		<tr>
+			<td width="20%" align="left"><image height="60px" width="60px" src="https://cdn3.f-cdn.com/contestentries/1035422/24356629/592ae5c58ae47_thumb900.jpg"></td>
+			<td align="middle"><span style="font-family:verdana; font-size:30px">Ace Trading Company</span></td>
+			<td width="20%" valign="bottom" align="right"><font face="verdana"><small>Welcome! <span id="span_name"></span></small></font></td>
+		</tr>
+	</table>
+  </div>
+
+
+  <script>
+    var chart = null;
+
+    function createGraph(data) {
+      // console.log(data);
+      // const dv = new DataSet.DataView().source(data);
+      chart = new G2.Chart({
+        container: 'container',
+        autoFit: true,
+        height: window.innerHeight - 20,
+        padding: [50, 40, 50, 40],
+      });
+
+
+      chart.data(data);
+
+      chart.axis('variable', {
+        tickLine: {
+          alignTick: false,
+        },
+      });
+
+      chart.tooltip({
+        showMarkers: false,
+      });
+      chart.interval().position('variable*value');
+      chart.interaction('element-active');
+
+      data.forEach((item) => {
+        chart
+          .annotation()
+          .text({
+            position: [item.variable, item.value],
+            content: item.value,
+            style: {
+              textAlign: 'center',
+            },
+            offsetY: -10,
+          })
+      });
+
+      chart.render();
+    }
+
+    function convertData(data) {
+      if (!data) return;
+
+      if (window.parameters) {
+        data = data.filter((x, i, array) => array.findIndex(y => y.variable === x.variable) === i).map((item) => {
+          const find_var = window.parameters.find(x => x.key === item.variable);
+          let { variable } = item;
+          if (find_var) variable = find_var.value;
+
+          return { ...item, variable, value: Number(item.value) };
+        });
+      }
+
+      if (chart) {
+        chart.destroy();
+      }
+
+      // console.log(dv.rows);
+      createGraph(data);
+    }
+
+
+    window.TagoIO.onStart((widget) => {
+      window.widget = widget;
+	  console.log(Object.getOwnPropertyNames(widget));
+	  console.log(widget.display.user.id + " " + widget.display.user.name);
+
+	  document.all.span_name.innerText = widget.display.user.name;
+      if (widget && widget.display && widget.display.parameters) {
+        const parameters = widget.display.parameters;
+        if (parameters) window.parameters = parameters;
+      }
+    });
+
+    window.TagoIO.onRealtime((widgetData) => {
+	  console.log("length of widgetdata:" + widgetData.length)
+	  
+      const data = widgetData[0].result;
+      window.data = data;
+      convertData(data);
+    });
+
+    window.TagoIO.ready({
+	header: {
+		absolute: false,
+		color: "#33BBFF", // absolute must be false to work
+  }
+});
+  </script>
+</body>
+
+</html>
